@@ -144,7 +144,9 @@ jobs:
 
   linux-flatpak:
     name: Linux Flatpak
-    runs-on: ubuntu-22.04
+    # Ubuntu 24.04 ships flatpak-builder 1.4.x, which uses appstreamcli
+    # on the host instead of the removed appstream-compose in the SDK.
+    runs-on: ubuntu-24.04
     needs: linux-tests
     steps:
       - name: Checkout
@@ -153,7 +155,10 @@ jobs:
       - name: Install Flatpak tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y flatpak flatpak-builder appstream-util
+          sudo apt-get install -y flatpak flatpak-builder appstream
+          flatpak-builder --version
+          appstreamcli --version
+          appstreamcli compose --help
           flatpak remote-add --user --if-not-exists flathub \
             https://flathub.org/repo/flathub.flatpakrepo
 
