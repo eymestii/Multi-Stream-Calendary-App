@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#9146ff"/>
+      <stop offset="1" stop-color="#5a2bbf"/>
+    </linearGradient>
+  </defs>
+  <rect x="8" y="14" width="112" height="106" rx="18" fill="url(#bg)"/>
+  <rect x="8" y="14" width="112" height="30" rx="18" fill="#00000026"/>
+  <rect x="8" y="30" width="112" height="14" fill="#00000026"/>
+  <rect x="32" y="4" width="10" height="24" rx="5" fill="#ffffff"/>
+  <rect x="86" y="4" width="10" height="24" rx="5" fill="#ffffff"/>
+  <g fill="#ffffff" opacity="0.35">
+    <rect x="22" y="54" width="16" height="12" rx="3"/><rect x="46" y="54" width="16" height="12" rx="3"/>
+    <rect x="70" y="54" width="16" height="12" rx="3"/><rect x="94" y="54" width="14" height="12" rx="3"/>
+    <rect x="22" y="100" width="16" height="12" rx="3"/><rect x="94" y="100" width="14" height="12" rx="3"/>
+  </g>
+  <rect x="22" y="72" width="60" height="22" rx="5" fill="#ffffff"/>
+  <circle cx="96" cy="83" r="12" fill="#ff4d4d"/>
+  <path d="M92 77 L103 83 L92 89 Z" fill="#ffffff"/>
+</svg>

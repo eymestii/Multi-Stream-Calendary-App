@@ -1,0 +1,38 @@
+# Manifiesto Flatpak de Stream Planner (interfaz Qt6).
+# Compilación local:   packaging/flatpak/build-flatpak.sh
+# Runtime: comprueba que la rama no esté EOL:  flatpak remote-ls flathub --runtime | grep org.kde.Platform
+app-id: io.github.mestisexo.StreamPlanner
+runtime: org.kde.Platform
+runtime-version: '6.11'
+sdk: org.kde.Sdk
+command: stream-planner
+
+finish-args:
+  # Solo interfaz gráfica. Sin red y sin acceso a archivos del usuario: la base de datos
+  # vive en ~/.var/app/io.github.mestisexo.StreamPlanner/data (XDG_DATA_HOME del sandbox).
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+
+cleanup:
+  - /share/man
+
+modules:
+  # SQLite viene en el runtime freedesktop (libsqlite3 + cabeceras en el SDK). Si tu versión
+  # del SDK no lo incluyera, añade aquí un módulo con la amalgamación oficial de sqlite.org.
+  - name: stream-planner
+    buildsystem: cmake-ninja
+    config-opts:
+      - -DCMAKE_BUILD_TYPE=Release
+      - -DSP_BUILD_QT6=ON
+      - -DSP_SYSTEM_SQLITE=ON   # sin red durante la compilación (requisito de Flathub)
+    sources:
+      # Desarrollo local: usa el árbol del repositorio.
+      - type: dir
+        path: ../..
+        skip: [.git, .flatpak-builder, build, out, dist, releases, packaging/appimage/tools]
+      # Para Flathub, sustituye el bloque anterior por una etiqueta fija del repositorio:
+      # - type: git
+      #   url: https://github.com/mestisexo/Stream-Planner.git
+      #   tag: v1.0.0
+      #   commit: <sha-completo-del-commit-de-la-etiqueta>

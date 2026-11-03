@@ -1,0 +1,198 @@
+name: Stream Planner CI & Release
+
+on:
+  push:
+    branches:
+      - "**"
+    tags:
+      - "v*"
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stream-planner-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows x64 (Win32)
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure MSVC
+        uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x64
+
+      - name: Configure CMake
+        run: >
+          cmake -S . -B build/win-x64 -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DSP_BUILD_WIN32=ON
+          -DSP_BUILD_QT6=OFF
+          -DSP_SYSTEM_SQLITE=OFF
+          -DSP_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build/win-x64 --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build/win-x64 --output-on-failure
+
+      - name: Package portable executable
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $exe = "build/win-x64/StreamPlanner.exe"
+          if (!(Test-Path $exe)) {
+            throw "No se encontró el ejecutable: $exe"
+          }
+
+          $versionLine = Select-String -Path "CMakeLists.txt" -Pattern '^project\(StreamPlanner VERSION ([0-9.]+)'
+          $version = $versionLine.Matches[0].Groups[1].Value
+          if ("${{ github.ref_type }}" -eq "tag") {
+            $version = "${{ github.ref_name }}".TrimStart("v")
+          }
+
+          New-Item -ItemType Directory -Force -Path dist/windows | Out-Null
+          Copy-Item $exe dist/windows/StreamPlanner.exe
+
+          @"
+          Stream Planner $version - Windows x64
+
+          Ejecuta StreamPlanner.exe para iniciar la aplicación.
+
+          Los datos de usuario se guardan fuera de esta carpeta, en:
+          %LOCALAPPDATA%\StreamPlanner
+
+          Esta distribución es portable: no requiere instalador.
+          "@ | Set-Content -Encoding UTF8 dist/windows/README.txt
+
+          Compress-Archive -Path dist/windows/* `
+            -DestinationPath "dist/StreamPlanner-v$version-windows-x64-portable.zip" `
+            -CompressionLevel Optimal
+
+      - name: Upload Windows artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: |
+            dist/StreamPlanner-*-windows-x64-portable.zip
+            dist/windows/StreamPlanner.exe
+          if-no-files-found: error
+          retention-days: 14
+
+  linux-tests:
+    name: Linux build & tests
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build qt6-base-dev libsqlite3-dev libgl1-mesa-dev
+          python3 -m pip install --user cmake
+
+      - name: Configure, build and test
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          cmake -S . -B build/linux-tests -G Ninja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DSP_BUILD_WIN32=OFF \
+            -DSP_BUILD_QT6=ON \
+            -DSP_SYSTEM_SQLITE=ON \
+            -DSP_BUILD_TESTS=ON
+          cmake --build build/linux-tests --parallel
+          ctest --test-dir build/linux-tests --output-on-failure
+
+  linux-appimage:
+    name: Linux AppImage
+    runs-on: ubuntu-22.04
+    needs: linux-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build qt6-base-dev qt6-wayland \
+            libsqlite3-dev libgl1-mesa-dev patchelf desktop-file-utils \
+            librsvg2-bin libfuse2
+          python3 -m pip install --user cmake
+
+      - name: Build AppImage
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          chmod +x packaging/appimage/build-appimage.sh
+          packaging/appimage/build-appimage.sh dist
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-appimage
+          path: dist/*.AppImage
+          if-no-files-found: error
+          retention-days: 14
+
+  linux-flatpak:
+    name: Linux Flatpak
+    runs-on: ubuntu-22.04
+    needs: linux-tests
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Flatpak tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+          flatpak remote-add --user --if-not-exists flathub \
+            https://flathub.org/repo/flathub.flatpakrepo
+
+      - name: Build Flatpak bundle
+        run: |
+          chmod +x packaging/flatpak/build-flatpak.sh
+          packaging/flatpak/build-flatpak.sh dist
+
+      - name: Upload Flatpak
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-flatpak
+          path: dist/*.flatpak
+          if-no-files-found: error
+          retention-days: 14
+
+  publish-release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs:
+      - windows
+      - linux-appimage
+      - linux-flatpak
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all platform artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: List release files
+        run: find release-assets -type f -maxdepth 3 -print
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: release-assets/**/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true

@@ -1,0 +1,14 @@
+[Desktop Entry]
+Type=Application
+Name=Stream Planner
+GenericName=Stream calendar
+GenericName[es]=Calendario de streams
+Comment=Plan multi-day streaming series and generate titles and announcements
+Comment[es]=Planifica series de streams y genera títulos y notificaciones
+Exec=stream-planner
+Icon=io.github.mestisexo.StreamPlanner
+Terminal=false
+Categories=Office;Calendar;Qt;
+Keywords=stream;twitch;kick;calendar;planner;
+StartupNotify=true
+StartupWMClass=StreamPlanner

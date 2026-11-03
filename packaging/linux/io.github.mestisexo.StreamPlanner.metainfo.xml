@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.mestisexo.StreamPlanner</id>
+  <name>Stream Planner</name>
+  <summary>Plan multi-day streaming series</summary>
+  <summary xml:lang="es">Planifica series de streams de varios días</summary>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>LicenseRef-proprietary</project_license>
+  <developer id="io.github.mestisexo"><name>mestisaurio</name></developer>
+  <description>
+    <p>Stream Planner organizes your streaming series on a kanban board (planned, live, done) and builds the stream title and community announcement from templates, checking the platform character limit.</p>
+    <p xml:lang="es">Stream Planner organiza tus series de streams en un tablero kanban (planeado, en vivo, realizado) y genera el título y la notificación a la comunidad a partir de plantillas, comprobando el límite de caracteres de la plataforma.</p>
+  </description>
+  <launchable type="desktop-id">io.github.mestisexo.StreamPlanner.desktop</launchable>
+  <url type="homepage">https://github.com/mestisexo/Stream-Planner</url>
+  <provides><binary>stream-planner</binary></provides>
+  <content_rating type="oars-1.1"/>
+  <categories><category>Office</category></categories>
+  <releases>
+    <release version="1.0.0" date="2026-11-01"/>
+  </releases>
+</component>

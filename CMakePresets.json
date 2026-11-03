@@ -26,6 +26,36 @@
 			"cacheVariables": {
 				"CMAKE_BUILD_TYPE": "Release"
 			}
+		},
+		{
+			"name": "linux-debug",
+			"displayName": "Linux Depurar",
+			"generator": "Ninja",
+			"binaryDir": "${sourceDir}/out/build/linux-debug",
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Linux"
+			},
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Debug",
+				"SP_BUILD_TESTS": "ON"
+			}
+		},
+		{
+			"name": "linux-release",
+			"displayName": "Linux Versión",
+			"generator": "Ninja",
+			"binaryDir": "${sourceDir}/out/build/linux-release",
+			"condition": {
+				"type": "equals",
+				"lhs": "${hostSystemName}",
+				"rhs": "Linux"
+			},
+			"cacheVariables": {
+				"CMAKE_BUILD_TYPE": "Release",
+				"SP_BUILD_TESTS": "ON"
+			}
 		}
 	],
 	"buildPresets": [
@@ -36,6 +66,23 @@
 		{
 			"name": "windows-x64-release",
 			"configurePreset": "windows-x64-release"
+		},
+		{
+			"name": "linux-debug",
+			"configurePreset": "linux-debug"
+		},
+		{
+			"name": "linux-release",
+			"configurePreset": "linux-release"
+		}
+	],
+	"testPresets": [
+		{
+			"name": "linux-release",
+			"configurePreset": "linux-release",
+			"output": {
+				"outputOnFailure": true
+			}
 		}
 	]
 }

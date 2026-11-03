@@ -7,6 +7,7 @@
 #include <charconv>
 #include <fstream>
 #include <string_view>
+#include <unordered_map>
 
 namespace sp {
 namespace {
@@ -203,10 +204,13 @@ bool Store::load(const std::filesystem::path& file, const std::filesystem::path&
     if (q) sqlite3_finalize(q);
     q = nullptr;
     if (ok) ok = sqlite3_prepare_v2(db, "SELECT stream_id,name,value FROM tag_values ORDER BY stream_id,name", -1, &q, nullptr) == SQLITE_OK;
+    // Índice id -> posición: evita O(streams x etiquetas) al asignar cada etiqueta.
+    std::unordered_map<int, std::size_t> pos;
+    pos.reserve(streams.size());
+    for (std::size_t i = 0; i < streams.size(); ++i) pos.emplace(streams[i].id, i);
     while (ok && sqlite3_step(q) == SQLITE_ROW) {
-        const int id = sqlite3_column_int(q, 0);
-        const std::string name = columnText(q, 1), value = columnText(q, 2);
-        for (auto& t : streams) if (t.id == id) { t.setTag(name, value); break; }
+        const auto it = pos.find(sqlite3_column_int(q, 0));
+        if (it != pos.end()) streams[it->second].setTag(columnText(q, 1), columnText(q, 2));
     }
     if (q) sqlite3_finalize(q);
     sqlite3_close(db);
