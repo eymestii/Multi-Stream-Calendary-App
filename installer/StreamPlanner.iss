@@ -1,5 +1,5 @@
 #define AppName "Stream Planner"
-#define AppVersion "1.0.0"
+#define AppVersion "1.0.1"
 #define AppPublisher "mestisaurio"
 #define AppExeName "StreamPlanner.exe"
 
