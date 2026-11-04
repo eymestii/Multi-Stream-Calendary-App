@@ -1,5 +1,5 @@
 #define AppName "Stream Planner"
-#define AppVersion "1.0.1"
+#define AppVersion "1.1.0"
 #define AppPublisher "mestisaurio"
 #define AppExeName "StreamPlanner.exe"
 
@@ -30,6 +30,8 @@ Name: "desktopicon"; Description: "Crear un acceso directo en el escritorio"; Gr
 
 [Files]
 Source: "..\out\build\x64-Release\StreamPlanner.exe"; DestDir: "{app}"; Flags: ignoreversion
+; Plantilla de credenciales; cópiala a %APPDATA%\StreamPlanner\integrations.json.
+Source: "..\config\integrations.example.json"; DestDir: "{app}"; Flags: ignoreversion
 
 [Icons]
 Name: "{group}\Stream Planner"; Filename: "{app}\{#AppExeName}"

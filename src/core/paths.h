@@ -16,4 +16,12 @@ struct DataPaths {
 // Crea el directorio de la base de datos si no existe.
 DataPaths defaultDataPaths();
 
+// Configuración de integraciones y tokens OAuth.
+// Windows: %APPDATA%\StreamPlanner\integrations.json y tokens en %LOCALAPPDATA%.
+// Linux/Unix: $XDG_CONFIG_HOME/StreamPlanner/integrations.json y tokens junto a la BD.
+// Overrides: STREAMPLANNER_CONFIG y STREAMPLANNER_TOKENS.
+// Crea los directorios padre si no existen.
+std::filesystem::path defaultConfigPath();
+std::filesystem::path defaultTokenPath();
+
 }  // namespace sp

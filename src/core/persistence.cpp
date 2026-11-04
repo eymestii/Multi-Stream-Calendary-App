@@ -36,6 +36,45 @@ std::string columnText(sqlite3_stmt* st, int col) {
     return p ? std::string(p, static_cast<std::size_t>(n)) : std::string();
 }
 
+// Las etiquetas de canal nunca contienen saltos de línea; se guardan así para
+// evitar una tabla extra y mantener el guardado global simple.
+std::string packTags(const std::vector<std::string>& tags) {
+    std::string out;
+    for (const auto& t : tags) {
+        if (t.find('\n') != std::string::npos) continue;
+        if (!out.empty()) out += '\n';
+        out += t;
+    }
+    return out;
+}
+
+std::vector<std::string> unpackTags(std::string_view value);
+
+void assignTarget(Stream& s, sqlite3_stmt* q) {
+    StreamTarget t;
+    t.platform = columnText(q, 1);
+    t.title = columnText(q, 2);
+    t.categoryId = columnText(q, 3);
+    t.categoryName = columnText(q, 4);
+    t.tags = unpackTags(columnText(q, 5));
+    t.lastPublishedAt = columnText(q, 6);
+    t.lastError = columnText(q, 7);
+    s.targets.push_back(std::move(t));
+}
+
+std::vector<std::string> unpackTags(std::string_view value) {
+    std::vector<std::string> out;
+    std::size_t pos = 0;
+    while (pos <= value.size()) {
+        const auto nl = value.find('\n', pos);
+        const auto part = value.substr(pos, nl == std::string_view::npos ? std::string_view::npos : nl - pos);
+        if (!part.empty()) out.emplace_back(part);
+        if (nl == std::string_view::npos) break;
+        pos = nl + 1;
+    }
+    return out;
+}
+
 bool createSchema(sqlite3* db) {
     return exec(db,
         "PRAGMA foreign_keys=ON;"
@@ -51,7 +90,14 @@ bool createSchema(sqlite3* db) {
         "CREATE TABLE IF NOT EXISTS tag_values ("
         " stream_id INTEGER NOT NULL REFERENCES streams(id) ON DELETE CASCADE,"
         " name TEXT NOT NULL, value TEXT NOT NULL, PRIMARY KEY(stream_id,name));"
-        "PRAGMA user_version=1;");
+        "CREATE TABLE IF NOT EXISTS stream_targets ("
+        " stream_id INTEGER NOT NULL REFERENCES streams(id) ON DELETE CASCADE,"
+        " platform TEXT NOT NULL, title TEXT NOT NULL, category_id TEXT NOT NULL,"
+        " category_name TEXT NOT NULL, tags TEXT NOT NULL,"
+        " last_published_at TEXT NOT NULL, last_error TEXT NOT NULL,"
+        " PRIMARY KEY(stream_id,platform));"
+        "CREATE INDEX IF NOT EXISTS idx_targets_stream ON stream_targets(stream_id);"
+        "PRAGMA user_version=2;");
 }
 
 bool toInt(std::string_view s, int& v) {
@@ -121,11 +167,17 @@ bool readLegacy(const std::filesystem::path& file, Store& out, int& maxId) {
 }
 
 bool insertAll(sqlite3* db, const Store& store) {
-    if (!exec(db, "BEGIN IMMEDIATE; DELETE FROM tag_values; DELETE FROM streams; DELETE FROM series;")) return false;
-    sqlite3_stmt *ss = nullptr, *st = nullptr, *tag = nullptr;
+    if (!exec(db,
+              "BEGIN IMMEDIATE; DELETE FROM stream_targets; DELETE FROM tag_values;"
+              "DELETE FROM streams; DELETE FROM series;"))
+        return false;
+    sqlite3_stmt *ss = nullptr, *st = nullptr, *tag = nullptr, *target = nullptr;
     bool ok = sqlite3_prepare_v2(db, "INSERT INTO series(id,name,title_template,notif_template,active) VALUES(?,?,?,?,?)", -1, &ss, nullptr) == SQLITE_OK
         && sqlite3_prepare_v2(db, "INSERT INTO streams(id,series_id,number,status,date) VALUES(?,?,?,?,?)", -1, &st, nullptr) == SQLITE_OK
-        && sqlite3_prepare_v2(db, "INSERT INTO tag_values(stream_id,name,value) VALUES(?,?,?)", -1, &tag, nullptr) == SQLITE_OK;
+        && sqlite3_prepare_v2(db, "INSERT INTO tag_values(stream_id,name,value) VALUES(?,?,?)", -1, &tag, nullptr) == SQLITE_OK
+        && sqlite3_prepare_v2(db,
+              "INSERT INTO stream_targets(stream_id,platform,title,category_id,category_name,tags,"
+              "last_published_at,last_error) VALUES(?,?,?,?,?,?,?,?)", -1, &target, nullptr) == SQLITE_OK;
     for (const auto& s : store.series) {
         if (!ok) break;
         sqlite3_bind_int(ss, 1, s.id); bindText(ss, 2, s.name); bindText(ss, 3, s.titleTemplate);
@@ -142,10 +194,19 @@ bool insertAll(sqlite3* db, const Store& store) {
             sqlite3_bind_int(tag, 1, t.id); bindText(tag, 2, tv.name); bindText(tag, 3, tv.value);
             ok = sqlite3_step(tag) == SQLITE_DONE; sqlite3_reset(tag); sqlite3_clear_bindings(tag);
         }
+        for (const auto& tg : t.targets) {
+            if (!ok) break;
+            sqlite3_bind_int(target, 1, t.id); bindText(target, 2, tg.platform);
+            bindText(target, 3, tg.title); bindText(target, 4, tg.categoryId);
+            bindText(target, 5, tg.categoryName); bindText(target, 6, packTags(tg.tags));
+            bindText(target, 7, tg.lastPublishedAt); bindText(target, 8, tg.lastError);
+            ok = sqlite3_step(target) == SQLITE_DONE; sqlite3_reset(target); sqlite3_clear_bindings(target);
+        }
     }
     if (ss) sqlite3_finalize(ss);
     if (st) sqlite3_finalize(st);
     if (tag) sqlite3_finalize(tag);
+    if (target) sqlite3_finalize(target);
     if (ok) ok = exec(db, "COMMIT;");
     else exec(db, "ROLLBACK;");
     return ok;
@@ -211,6 +272,16 @@ bool Store::load(const std::filesystem::path& file, const std::filesystem::path&
     while (ok && sqlite3_step(q) == SQLITE_ROW) {
         const auto it = pos.find(sqlite3_column_int(q, 0));
         if (it != pos.end()) streams[it->second].setTag(columnText(q, 1), columnText(q, 2));
+    }
+    if (q) sqlite3_finalize(q);
+    q = nullptr;
+    if (ok) ok = sqlite3_prepare_v2(db,
+        "SELECT stream_id,platform,title,category_id,category_name,tags,last_published_at,last_error"
+        " FROM stream_targets ORDER BY stream_id,platform", -1, &q, nullptr) == SQLITE_OK;
+    while (ok && sqlite3_step(q) == SQLITE_ROW) {
+        const auto it = pos.find(sqlite3_column_int(q, 0));
+        if (it == pos.end()) continue;
+        assignTarget(streams[it->second], q);
     }
     if (q) sqlite3_finalize(q);
     sqlite3_close(db);

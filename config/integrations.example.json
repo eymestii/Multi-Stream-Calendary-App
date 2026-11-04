@@ -1,0 +1,12 @@
+{
+  "twitch": {
+    "client_id": "GENERIC_TWITCH_CLIENT_ID",
+    "client_secret": "",
+    "redirect_uri": ""
+  },
+  "kick": {
+    "client_id": "GENERIC_KICK_CLIENT_ID",
+    "client_secret": "GENERIC_KICK_CLIENT_SECRET",
+    "redirect_uri": "http://127.0.0.1:7512/callback"
+  }
+}

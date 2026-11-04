@@ -42,6 +42,7 @@ void createControls() {
     g.btnSave = mk(L"BUTTON", L"Guardar serie", BS_PUSHBUTTON, IDC_SAVE);
     g.btnCopyT = mk(L"BUTTON", L"Copiar título", BS_PUSHBUTTON, IDC_COPYT);
     g.btnCopyN = mk(L"BUTTON", L"Copiar notificación", BS_PUSHBUTTON, IDC_COPYN);
+    g.btnPublish = mk(L"BUTTON", L"Publicar en plataformas...", BS_PUSHBUTTON, IDC_OPENPUBLISH);
     g.stStats = mk(L"STATIC", L"", 0, 0);
 
     const wchar_t* heads[3] = {L"Planeado", L"En vivo", L"Realizado"};
@@ -104,6 +105,7 @@ void layout(int cw, int ch) {
     mv(g.btnSave, x0, 338, 140, 30);
     mv(g.btnCopyT, x0 + 148, 338, 140, 30);
     mv(g.btnCopyN, x0 + 296, 338, 180, 30);
+    mv(g.btnPublish, x0 + 484, 338, 200, 30);
     mv(g.stStats, x0, 376, aw, 22);
 
     // Formulario inferior: filas de etiquetas (según cuántas haya) + fila de día/fecha/botones

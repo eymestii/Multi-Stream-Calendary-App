@@ -13,6 +13,7 @@ class QLineEdit;
 class QListWidget;
 class QPushButton;
 class QWidget;
+class PublishPanel;
 
 class MainWindow : public QMainWindow {
     Q_OBJECT
@@ -23,7 +24,9 @@ private:
     // construcción
     void buildUi();
     QWidget* buildLeftPanel();
+    QWidget* buildPlanningPanel();
     QWidget* buildRightPanel();
+    void updatePublishContext();
     void nameWidgets();  // objectName: tests y hojas de estilo
     void connectSignals();
 
@@ -75,4 +78,5 @@ private:
     std::array<QLineEdit*, sp::kMaxTags> tagEd_{};
     QLineEdit *edDay_{}, *edDate_{};
     QPushButton *btnAdd_{}, *btnLeft_{}, *btnRight_{}, *btnDelT_{};
+    PublishPanel* publish_{};
 };

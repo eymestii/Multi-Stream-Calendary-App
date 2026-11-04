@@ -16,6 +16,8 @@ CMakeUserPresets.json
 *.bak
 *.migrated.bak
 %LOCALAPPDATA%/
+/config/integrations.json
+/config/tokens.json
 
 # Logs y temporales
 *.log

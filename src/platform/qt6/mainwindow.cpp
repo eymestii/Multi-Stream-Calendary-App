@@ -2,6 +2,7 @@
 
 #include <QApplication>
 #include <QClipboard>
+#include <QDateTime>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -13,8 +14,10 @@
 #include <QRegularExpressionValidator>
 #include <QShortcut>
 #include <QSignalBlocker>
+#include <QTabWidget>
 #include <QVBoxLayout>
 
+#include "integration/publishpanel.h"
 #include "qtutil.h"
 
 namespace {
@@ -88,6 +91,34 @@ QWidget* MainWindow::buildLeftPanel() {
 }
 
 QWidget* MainWindow::buildRightPanel() {
+    auto* tabs = new QTabWidget;
+    tabs->addTab(buildPlanningPanel(), tr("Planificación"));
+    publish_ = new PublishPanel;
+    publish_->setObjectName(QStringLiteral("publishPanel"));
+    tabs->addTab(publish_, tr("Plataformas"));
+    connect(publish_, &PublishPanel::targetUpdated, this,
+            [this](int platform, int streamId, const QString& title, const QString& categoryId,
+                   const QString& categoryName, const QStringList& tags, const QString& lastError,
+                   bool published) {
+                if (streamId <= 0) return;
+                sp::StreamTarget t;
+                t.platform = platform == 1 ? "kick" : "twitch";
+                t.title = ss(title);
+                t.categoryId = ss(categoryId);
+                t.categoryName = ss(categoryName);
+                for (const auto& tag : tags) t.tags.push_back(ss(tag));
+                t.lastError = ss(lastError);
+                if (const sp::StreamTarget* old = planner_.target(streamId, t.platform))
+                    t.lastPublishedAt = old->lastPublishedAt;
+                if (published)
+                    t.lastPublishedAt =
+                        QDateTime::currentDateTimeUtc().toString(Qt::ISODate).toStdString();
+                planner_.saveTarget(streamId, t);
+            });
+    return tabs;
+}
+
+QWidget* MainWindow::buildPlanningPanel() {
     auto* w = new QWidget;
     auto* v = new QVBoxLayout(w);
     v->setContentsMargins(0, 0, 0, 0);
@@ -361,6 +392,14 @@ void MainWindow::updatePreview() {
     stNotifCount_->setText(tr("Notificación: %1/%2%3").arg(p.notifLen).arg(lim).arg(p.notifOver ? tr("  ¡DEMASIADA LARGA!") : QString()));
     setError(stTitleCount_, p.titleOver);
     setError(stNotifCount_, p.notifOver);
+    if (publish_) publish_->setPlanTitle(p);
+}
+
+// Carga en el panel de plataformas el stream seleccionado y su último estado guardado.
+void MainWindow::updatePublishContext() {
+    if (!publish_) return;
+    const sp::Preview p = sp::makePreview(draft(), referenceStream());
+    publish_->setContext(selStream_, p, planner_.findStream(selStream_));
 }
 
 // Detecta las {etiquetas} de las plantillas (lo escrito ahora mismo) y muestra/oculta los
@@ -419,6 +458,7 @@ void MainWindow::loadFields() {
     refreshKanban();
     updatePreview();
     updateStats();
+    updatePublishContext();
 }
 
 void MainWindow::selectSeries(int id, bool repopulateList) {
@@ -511,6 +551,7 @@ void MainWindow::actAddStream() {
     refreshKanban();
     updatePreview();
     updateStats();
+    updatePublishContext();
 }
 
 void MainWindow::actMoveStream(int dir) {
@@ -527,6 +568,7 @@ void MainWindow::actDeleteStream() {
     refreshKanban();
     updatePreview();
     updateStats();
+    updatePublishContext();
 }
 
 void MainWindow::onKanbanSelection(int column) {
@@ -540,4 +582,5 @@ void MainWindow::onKanbanSelection(int column) {
         lbCol_[static_cast<std::size_t>(k)]->setCurrentItem(nullptr);
     }
     updatePreview();
+    updatePublishContext();
 }

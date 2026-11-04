@@ -157,4 +157,19 @@ Outcome Planner::deleteStream(int streamId) {
     return persist();
 }
 
+const StreamTarget* Planner::target(int streamId, std::string_view platform) const {
+    const Stream* t = findStream(streamId);
+    return t ? t->findTarget(platform) : nullptr;
+}
+
+Outcome Planner::saveTarget(int streamId, const StreamTarget& target) {
+    Stream* t = store_.findStream(streamId);
+    if (!t) return {Err::NoStream};
+    StreamTarget& dst = t->target(target.platform);
+    dst = target;
+    Outcome o;
+    o.id = streamId;
+    return persist(o);
+}
+
 }  // namespace sp

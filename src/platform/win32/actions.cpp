@@ -1,6 +1,9 @@
 // Acciones del usuario y despacho de WM_COMMAND.
 #include "platform/win32/app.h"
 
+#include "platform/win32/integration/credentials_dialog.h"
+#include "platform/win32/integration/publish_dialog.h"
+
 static void actNewSeries() {
     int id = g.store.addSeries("Nueva serie");
     persist();
@@ -113,6 +116,10 @@ static void actDeleteStream() {
 }
 
 void onCommand(int id, int code) {
+    if (id == IDC_CREDENTIALS) {
+        if (openCredentialsDialog(g.hwnd, false)) reloadIntegrations();
+        return;
+    }
     if (id == IDC_SERIES && code == LBN_SELCHANGE) {
         int i = (int)SendMessageW(g.lbSeries, LB_GETCURSEL, 0, 0);
         if (i >= 0) selectSeries((int)SendMessageW(g.lbSeries, LB_GETITEMDATA, i, 0));
@@ -143,6 +150,7 @@ void onCommand(int id, int code) {
             case IDC_LEFT: actMoveStream(-1); break;
             case IDC_RIGHT: actMoveStream(+1); break;
             case IDC_DELT: actDeleteStream(); break;
+            case IDC_OPENPUBLISH: openPublishDialog(g.hwnd); break;
         }
     }
 }

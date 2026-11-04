@@ -90,6 +90,10 @@ public:
     Outcome moveStream(int streamId, int dir);  // -1 / +1 entre Planeado, En vivo y Realizado
     Outcome deleteStream(int streamId);
 
+    // Estado por plataforma (borrador + último resultado de publicación).
+    const StreamTarget* target(int streamId, std::string_view platform) const;
+    Outcome saveTarget(int streamId, const StreamTarget& target);
+
 private:
     Outcome persist(Outcome o = {});
 

@@ -17,6 +17,12 @@
   <content_rating type="oars-1.1"/>
   <categories><category>Office</category></categories>
   <releases>
+    <release version="1.1.0" date="2026-11-03">
+      <description>
+        <p>Official Twitch and Kick integration: OAuth sign-in, live title, category search and channel tags.</p>
+        <p xml:lang="es">Integración oficial con Twitch y Kick: inicio de sesión OAuth, título en directo, búsqueda de categorías y etiquetas del canal.</p>
+      </description>
+    </release>
     <release version="1.0.1" date="2026-11-01"/>
   </releases>
 </component>

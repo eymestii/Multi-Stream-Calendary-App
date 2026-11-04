@@ -33,6 +33,18 @@ struct TagValue {
     std::string value;
 };
 
+// Último estado publicado/borrador por plataforma. No contiene tokens:
+// las credenciales viven en el almacén de tokens del core de integraciones.
+struct StreamTarget {
+    std::string platform;  // "twitch" | "kick"
+    std::string title;
+    std::string categoryId;
+    std::string categoryName;
+    std::vector<std::string> tags;  // etiquetas de canal (no las de plantilla)
+    std::string lastPublishedAt;
+    std::string lastError;
+};
+
 struct Stream {
     int id = 0;
     int seriesId = 0;
@@ -40,9 +52,13 @@ struct Stream {
     Status status = Status::Planned;
     std::string date;  // YYYY-MM-DD
     std::vector<TagValue> tags;
+    std::vector<StreamTarget> targets;  // estado por plataforma
 
     const std::string* findTag(std::string_view name) const;  // nullptr si no existe
     void setTag(std::string_view name, std::string value);
+
+    const StreamTarget* findTarget(std::string_view platform) const;
+    StreamTarget& target(std::string_view platform);  // crea si no existe
 };
 
 }  // namespace sp

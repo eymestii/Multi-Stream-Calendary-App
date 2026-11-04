@@ -16,6 +16,21 @@ void Stream::setTag(std::string_view name, std::string value) {
     tags.push_back({std::string(name), std::move(value)});
 }
 
+const StreamTarget* Stream::findTarget(std::string_view platform) const {
+    for (const auto& t : targets)
+        if (t.platform == platform) return &t;
+    return nullptr;
+}
+
+StreamTarget& Stream::target(std::string_view platform) {
+    for (auto& t : targets)
+        if (t.platform == platform) return t;
+    StreamTarget created;
+    created.platform = std::string(platform);
+    targets.push_back(std::move(created));
+    return targets.back();
+}
+
 int Store::addSeries(const std::string& name) {
     Series s;
     s.id = nextId_++;

@@ -8,8 +8,10 @@ sdk: org.kde.Sdk
 command: stream-planner
 
 finish-args:
-  # Solo interfaz gráfica. Sin red y sin acceso a archivos del usuario: la base de datos
-  # vive en ~/.var/app/io.github.mestisexo.StreamPlanner/data (XDG_DATA_HOME del sandbox).
+  # Red: obligatoria para OAuth y para las APIs oficiales de Twitch/Kick.
+  # La base de datos y los tokens siguen dentro del sandbox
+  # (~/.var/app/io.github.mestisexo.StreamPlanner/data).
+  - --share=network
   - --share=ipc
   - --socket=wayland
   - --socket=fallback-x11
@@ -34,5 +36,5 @@ modules:
       # Para Flathub, sustituye el bloque anterior por una etiqueta fija del repositorio:
       # - type: git
       #   url: https://github.com/mestisexo/Stream-Planner.git
-      #   tag: v1.0.0
+      #   tag: v1.1.0
       #   commit: <sha-completo-del-commit-de-la-etiqueta>

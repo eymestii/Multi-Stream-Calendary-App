@@ -3,7 +3,11 @@
 #
 # Requisitos (Debian/Ubuntu):
 #   sudo apt install build-essential cmake ninja-build qt6-base-dev libsqlite3-dev \
-#        libgl1-mesa-dev qt6-wayland patchelf desktop-file-utils libfuse2 curl
+#        libgl1-mesa-dev qt6-wayland libssl-dev patchelf desktop-file-utils libfuse2 curl
+#
+# TLS: Twitch/Kick usan HTTPS. Qt6Network carga el backend OpenSSL en tiempo de
+# ejecución; linuxdeploy-plugin-qt empaqueta libssl/libcrypto si están instaladas
+# al compilar. Sin OpenSSL el AppImage no podrá iniciar sesión ni publicar.
 #
 # IMPORTANTE (compatibilidad): un AppImage hereda la versión de glibc del sistema donde
 # se compila. Para que corra en distros antiguas, compílalo en la más antigua que quieras

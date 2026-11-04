@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
-project(StreamPlanner VERSION 1.0.1 LANGUAGES C CXX)
+project(StreamPlanner VERSION 1.1.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -77,8 +77,19 @@ endif()
 
 add_library(sp_core STATIC
   src/core/text.cpp src/core/store.cpp src/core/persistence.cpp
-  src/core/paths.cpp src/core/planner.cpp)
+  src/core/paths.cpp src/core/planner.cpp
+  src/core/integrations/http.cpp
+  src/core/integrations/api_util.cpp
+  src/core/integrations/config.cpp
+  src/core/integrations/credentials.cpp
+  src/core/integrations/crypto.cpp
+  src/core/integrations/secure_file.cpp
+  src/core/integrations/url.cpp
+  src/core/integrations/token_store.cpp
+  src/core/integrations/twitch_client.cpp
+  src/core/integrations/kick_client.cpp)
 target_include_directories(sp_core PUBLIC src)
+target_include_directories(sp_core PRIVATE ${PROJECT_SOURCE_DIR}/third_party)
 target_link_libraries(sp_core PRIVATE sqlite3)
 if(MSVC)
   target_compile_options(sp_core PRIVATE /utf-8 /W4)
@@ -92,9 +103,14 @@ if(WIN32 AND SP_BUILD_WIN32)
     src/platform/win32/winutil.cpp
     src/platform/win32/controls.cpp
     src/platform/win32/view.cpp
-    src/platform/win32/actions.cpp)
-  target_link_libraries(StreamPlanner PRIVATE sp_core sqlite3 user32 gdi32 comctl32)
-  target_compile_definitions(StreamPlanner PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN UNICODE _UNICODE)
+    src/platform/win32/actions.cpp
+    src/platform/win32/integration/win_async.cpp
+    src/platform/win32/integration/winhttp_client.cpp
+    src/platform/win32/integration/win_platform_services.cpp
+    src/platform/win32/integration/credentials_dialog.cpp
+    src/platform/win32/integration/publish_dialog.cpp)
+  target_link_libraries(StreamPlanner PRIVATE sp_core sqlite3 user32 gdi32 comctl32 winhttp ws2_32 shell32)
+  target_compile_definitions(StreamPlanner PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN UNICODE _UNICODE _WIN32_WINNT=0x0601)
   if(MSVC)
     target_compile_options(StreamPlanner PRIVATE /utf-8 /W4 $<$<CONFIG:Release>:/O1 /GL>)
     target_link_options(StreamPlanner PRIVATE $<$<CONFIG:Release>:/LTCG /OPT:REF /OPT:ICF>)

@@ -5,6 +5,7 @@
 #include <QMessageBox>
 
 #include "core/planner.h"
+#include "integration/credentials_dialog.h"
 #include "mainwindow.h"
 
 int main(int argc, char** argv) {
@@ -15,6 +16,10 @@ int main(int argc, char** argv) {
     // Debe coincidir con el nombre del .desktop (sin extensión): Wayland lo usa para el icono.
     QGuiApplication::setDesktopFileName(QStringLiteral("io.github.mestisexo.StreamPlanner"));
     QApplication::setWindowIcon(QIcon(QStringLiteral(":/app.svg")));
+
+    // Puerta de credenciales: cada usuario debe registrar y verificar las suyas
+    // antes de acceder a la interfaz principal.
+    if (!CredentialsDialog::ensureVerified(nullptr)) return 0;
 
     sp::Planner planner(sp::defaultDataPaths());
     if (!planner.open()) {
