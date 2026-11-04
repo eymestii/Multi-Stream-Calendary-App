@@ -46,7 +46,7 @@ struct State {
     HWND catLabel = nullptr;
     HWND tagEdit = nullptr;
     HWND tagAdd = nullptr;
-    HWND tags = nullptr;
+    HWND tagList = nullptr;
     HWND tagDel = nullptr;
     HWND publish = nullptr;
     HWND result = nullptr;
@@ -89,9 +89,9 @@ void setStatus(State* st, const std::string& text, bool error = false) {
 }
 
 void refreshTags(State* st) {
-    SendMessageW(st->tags, LB_RESETCONTENT, 0, 0);
+    SendMessageW(st->tagList, LB_RESETCONTENT, 0, 0);
     for (const auto& t : st->tags)
-        SendMessageW(st->tags, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(wstr(t).c_str()));
+        SendMessageW(st->tagList, LB_ADDSTRING, 0, reinterpret_cast<LPARAM>(wstr(t).c_str()));
 }
 
 void updateCatLabel(State* st, const std::string& id, const std::string& name) {
@@ -352,7 +352,7 @@ void addTag(HWND hwnd) {
 void removeTag(HWND hwnd) {
     State* st = stateOf(hwnd);
     if (!st) return;
-    const int row = static_cast<int>(SendMessageW(st->tags, LB_GETCURSEL, 0, 0));
+    const int row = static_cast<int>(SendMessageW(st->tagList, LB_GETCURSEL, 0, 0));
     if (row < 0 || row >= static_cast<int>(st->tags.size())) return;
     st->tags.erase(st->tags.begin() + row);
     st->channelLoaded = true;
@@ -449,7 +449,7 @@ void createControls(HWND hwnd, State* st) {
     st->tagEdit = mk(L"EDIT", L"", ED, IDC_TAG_EDIT, 16, 424, 560, 26);
     st->tagAdd = mk(L"BUTTON", L"Añadir", BT, IDC_TAG_ADD, 584, 424, 90, 26);
     st->tagDel = mk(L"BUTTON", L"Quitar", BT, IDC_TAG_DEL, 682, 424, 100, 26);
-    st->tags = mk(L"LISTBOX", L"", LB, IDC_TAGS, 16, 456, 768, 72);
+    st->tagList = mk(L"LISTBOX", L"", LB, IDC_TAGS, 16, 456, 768, 72);
 
     st->publish = mk(L"BUTTON", L"Publicar", BT, IDC_PUBLISH, 16, 542, 150, 32);
     st->result = label(L"", 180, 542, 604, 32);
